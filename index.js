@@ -12,12 +12,12 @@ const CELL_SIZE = 5,
       universe = Universe.new(),
       width = universe.width(),
       height = universe.height(),
-      canvas = document.getElementById("game-of-live-canvas");
+      canvas = document.getElementById("game-of-live-canvas"),
+      ctx = canvas.getContext("2d"),
+      toggleUniverse = document.getElementById("toggleUniverse");
 
 canvas.height = (CELL_SIZE + 1) * height + 1;
 canvas.width = (CELL_SIZE + 1) * width + 1;
-
-const ctx = canvas.getContext("2d");
 
 const drawGrid = () => {
     ctx.beginPath();
@@ -65,12 +65,47 @@ const drawCells = () => {
     ctx.stroke();
 };
 
+
+/* Animation Frame Control */
+let animationId;
+
 const renderLoop = () => {
     universe.tick();
 
     drawGrid();
     drawCells();
-    requestAnimationFrame(renderLoop);
+    animationId = requestAnimationFrame(renderLoop);
 };
 
-requestAnimationFrame(renderLoop);
+const play = () => {
+    toggleUniverse.textContent = "Playing";
+    renderLoop();
+};
+
+const pause = () => {
+    toggleUniverse.textContent = "Paused"
+    cancelAnimationFrame(animationId);
+    animationId = undefined;
+};
+
+toggleUniverse.addEventListener("click", () => {
+    return (animationId) ? pause() : play();
+});
+
+canvas.addEventListener("click", event => {
+    const boundingRect = canvas.getBoundingClientRect(),
+          scaleX = canvas.width / boundingRect.width,
+          scaleY = canvas.height / boundingRect.height,
+          canvasLeft = (event.clientX - boundingRect.left) * scaleX,
+          canvasTop = (event.clientY - boundingRect.top) * scaleY,
+          col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1),
+          row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
+
+    universe.toggle_cell(row, col);
+
+    drawCells();
+    drawGrid();
+});
+
+// ENGAGE UNIVERSE...
+play();

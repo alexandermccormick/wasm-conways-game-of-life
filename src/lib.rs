@@ -1,8 +1,28 @@
 extern crate wasm_bindgen;
+extern crate console_error_panic_hook;
 
 use std::fmt;
 
 use wasm_bindgen::prelude::*;
+
+
+#[wasm_bindgen]
+extern {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(msg: &str);
+}
+
+#[wasm_bindgen]
+pub fn wasm_panic_init() {
+    use std::panic;
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+}
+
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+#[allow(unused_macros)]
+macro_rules! log {
+    ($($t:tt)*) => (log(&format!($($t)*)))
+}
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -10,6 +30,16 @@ pub enum Cell
 {
     Dead = 0,
     Alive = 1,
+}
+
+impl Cell
+{
+    fn toggle(&mut self) {
+        *self = match *self {
+            Cell::Dead => Cell::Alive,
+            Cell::Alive => Cell::Dead,
+        };
+    }
 }
 
 #[wasm_bindgen]
@@ -68,6 +98,12 @@ impl Universe
 #[wasm_bindgen]
 impl Universe
 {
+    pub fn toggle_cell(&mut self, row: u32, column: u32)
+    {
+        let idx = self.get_index(row, column);
+        self.cells[idx].toggle();
+    }
+    
     pub fn tick(&mut self)
     {
         let mut next = self.cells.clone();
