@@ -14,8 +14,24 @@ const CELL_SIZE = 5,
       height = universe.height(),
       canvas = document.getElementById("game-of-live-canvas"),
       ctx = canvas.getContext("2d"),
-      toggleUniverse = document.getElementById("toggleUniverse");
+      toggleUniverse = document.getElementById("toggleUniverse"),
+      tickCounter = document.getElementById("ticks"),
+      fpsControl = document.getElementById("tickRange");
 
+fpsControl.min = 1;
+fpsControl.max = 11
+
+const fpsControlParser = () => {
+    switch (key) {
+        case value:
+            
+            break;
+    
+        default:
+            break;
+    }
+};
+      
 canvas.height = (CELL_SIZE + 1) * height + 1;
 canvas.width = (CELL_SIZE + 1) * width + 1;
 
@@ -68,9 +84,31 @@ const drawCells = () => {
 
 /* Animation Frame Control */
 let animationId;
+let tickCount = 0;
+let fps; // global access to setTimeout
+
+const trackFPS = () => {
+    fps = setTimeout(() => {
+        tickCounter.innerHTML = tickCount;
+        tickCount = 0;
+
+        trackFPS();
+    }, 1000);
+};
+
+const fpsUp = () => {
+    for(let i=0; i < fpsControl.value; i++) {
+        universe.tick();
+        tickCount++;
+    }
+};
+
+const fpsDown = (frameIter) => {
+    if (frameIter === )
+};
 
 const renderLoop = () => {
-    universe.tick();
+
 
     drawGrid();
     drawCells();
@@ -79,11 +117,13 @@ const renderLoop = () => {
 
 const play = () => {
     toggleUniverse.textContent = "Playing";
+    trackFPS();
     renderLoop();
 };
 
 const pause = () => {
     toggleUniverse.textContent = "Paused"
+    clearTimeout(fps);
     cancelAnimationFrame(animationId);
     animationId = undefined;
 };
