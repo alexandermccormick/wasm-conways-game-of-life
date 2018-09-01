@@ -18,19 +18,21 @@ const CELL_SIZE = 5,
       tickCounter = document.getElementById("ticks"),
       fpsControl = document.getElementById("tickRange");
 
-fpsControl.min = 1;
-fpsControl.max = 11
+/* Animation Frame Control */
+let animationId;
+let frameIter = 0;
+let fps; // global access to setTimeout
+let tickCount = 0;
 
-const fpsControlParser = () => {
-    switch (key) {
-        case value:
-            
-            break;
-    
-        default:
-            break;
-    }
-};
+fpsControl.min = 1; // The wasm portion will expect this to always be 1
+fpsControl.max = 11; // Must be odd number
+
+const fpsControlMedian = Math.floor(fpsControl.max / 2) + 1;
+let tickRate = fpsControl.value;
+
+fpsControl.addEventListener("change", () => {
+    tickRate = fpsControl.value;
+});
       
 canvas.height = (CELL_SIZE + 1) * height + 1;
 canvas.width = (CELL_SIZE + 1) * width + 1;
@@ -83,33 +85,41 @@ const drawCells = () => {
 
 
 /* Animation Frame Control */
-let animationId;
-let tickCount = 0;
-let fps; // global access to setTimeout
+// let animationId;
+// let tickCount = 0;
+// // let fps; // global access to setTimeout
 
 const trackFPS = () => {
     fps = setTimeout(() => {
         tickCounter.innerHTML = tickCount;
         tickCount = 0;
-
         trackFPS();
     }, 1000);
 };
 
-const fpsUp = () => {
-    for(let i=0; i < fpsControl.value; i++) {
+const increaseFPS = () => {
+    for(let i=0; i < tickRate; i++) {
         universe.tick();
         tickCount++;
     }
 };
 
-const fpsDown = (frameIter) => {
-    if (frameIter === )
+const decreaseFPS = (frameIter) => {
+    if (Math.abs(tickRate - fpsControlMedian) === frameIter) {
+        frameIter = 0;
+        tickCount++;
+        universe.tick();
+    };
 };
 
 const renderLoop = () => {
-
-
+    // if (tickRate === fpsControlMedian) { universe.tick(); } else
+    // if (tickRate > fpsControlMedian) { increaseFPS(); } else
+    // if (tickRate < fpsControlMedian) { decreaseFPS(); };
+    // TICKRATE FRAMEITER FPSMAX
+    frameIter++;
+    tickCount++;
+    universe.tick();
     drawGrid();
     drawCells();
     animationId = requestAnimationFrame(renderLoop);

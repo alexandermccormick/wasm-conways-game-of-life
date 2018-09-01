@@ -93,30 +93,21 @@ impl Universe
         }
         count
     }
-}
 
-#[wasm_bindgen]
-impl Universe
-{
-    pub fn toggle_cell(&mut self, row: u32, column: u32)
+    // Analyze universe, apply rules
+    fn tick(&mut self)
     {
-        let idx = self.get_index(row, column);
-        self.cells[idx].toggle();
-    }
-    
-    pub fn tick(&mut self)
-    {
-        let mut next = self.cells.clone();
+        let mut next = self.cells.clone(); // Clone current "tick" of universe to be analyzed
 
         for row in 0..self.height
         {
             for col in 0..self.width
             {
-                let idx = self.get_index(row, col);
-                let cell = self.cells[idx];
-                let live_neighbors = self.live_neighbor_count(row, col);
+                let idx = self.get_index(row, col); // Index of current cell being analyzed
+                let cell = self.cells[idx]; // Current cell being analyzed
+                let live_neighbors = self.live_neighbor_count(row, col); // Amount of neighbors alive
 
-                let next_cell = match (cell, live_neighbors)
+                let next_cell = match (cell, live_neighbors) // Apply rules
                 {
                     // Rule 1) Any live cell with fewer than 2 neighbors dies
                     (Cell::Alive, x) if x < 2 => Cell::Dead,
@@ -134,10 +125,39 @@ impl Universe
                     (otherwise, _) => otherwise,
                 };
 
-                next[idx] = next_cell;
+                next[idx] = next_cell; // update cell status
             }
         }
-        self.cells = next;
+        self.cells = next; // set analyzed "tick" as current
+    }
+
+    fn increaseTPF(&self, tick_rate: u32, median_tpf: u32)
+    {
+        let tpf = tick_rate - median_tpf + 1;
+        // for loop here
+    }
+}
+
+#[wasm_bindgen]
+impl Universe
+{
+    pub fn toggle_cell(&mut self, row: u32, column: u32)
+    {
+        let idx = self.get_index(row, column);
+        self.cells[idx].toggle();
+    }
+
+    // if (tickRate === fpsControlMedian) { universe.tick(); } else
+    // if (tickRate > fpsControlMedian) { increaseFPS(); } else
+    // if (tickRate < fpsControlMedian) { decreaseFPS(frameIter); };
+    // TICKRATE FRAMEITER FPSMAX
+    pub fn controller(&mut self, tick_rate: u32, frame_iter: u32, max_tpf: u32)
+    {
+        let median_tpf: u32 = ((max_tpf as f32 / 2_f32).floor() + 1_f32) as u32;
+
+        if tick_rate == median_tpf { self.tick(); } else
+        if tick_rate > median_tpf { self.increaseTPF(tick_rate, median_tpf); } else
+        if tick_rate < median_tpf {  }
     }
 
     pub fn new() -> Universe
