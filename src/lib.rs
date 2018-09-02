@@ -47,7 +47,13 @@ pub struct Universe
 {
     width: u32,
     height: u32,
+    frame_iter: u32,
     cells: Vec<Cell>,
+    tick_rate: Option<u32>,
+    increased_tick_rate: Option<u32>,
+    decreased_tick_rate: Option<u32>,
+    median_tpf: Option<u32>,
+    max_tpf: Option<u32>,
 }
 
 impl fmt::Display for Universe
@@ -131,39 +137,47 @@ impl Universe
         self.cells = next; // set analyzed "tick" as current
     }
 
-    fn increaseTPF(&self, tick_rate: u32, median_tpf: u32)
+    fn increase_tpf(&mut self)
     {
-        let tpf = tick_rate - median_tpf + 1;
-        // for loop here
+        for _ in 0..self.increased_tick_rate.unwrap()
+        {
+            self.tick();
+        }
+    }
+
+    fn decrease_tpf(&mut self)
+    {
+
+        if self.decreased_tick_rate.unwrap() == self.frame_iter
+        {
+            self.frame_iter = 1;
+            self.tick();
+        }
+        else { self.frame_iter += 1; }
+    }
+
+    fn has_value(&self, property: Option<u32>) -> bool
+    {
+        if let Some(_) = property { true } else { false }
     }
 }
 
 #[wasm_bindgen]
 impl Universe
 {
-    pub fn toggle_cell(&mut self, row: u32, column: u32)
-    {
-        let idx = self.get_index(row, column);
-        self.cells[idx].toggle();
-    }
-
-    // if (tickRate === fpsControlMedian) { universe.tick(); } else
-    // if (tickRate > fpsControlMedian) { increaseFPS(); } else
-    // if (tickRate < fpsControlMedian) { decreaseFPS(frameIter); };
-    // TICKRATE FRAMEITER FPSMAX
-    pub fn controller(&mut self, tick_rate: u32, frame_iter: u32, max_tpf: u32)
-    {
-        let median_tpf: u32 = ((max_tpf as f32 / 2_f32).floor() + 1_f32) as u32;
-
-        if tick_rate == median_tpf { self.tick(); } else
-        if tick_rate > median_tpf { self.increaseTPF(tick_rate, median_tpf); } else
-        if tick_rate < median_tpf {  }
-    }
-
     pub fn new() -> Universe
     {
         let width = 64;
         let height = 64;
+
+        let tick_rate = None;
+        let increased_tick_rate = None;
+        let decreased_tick_rate = None;
+        
+        let median_tpf = None;
+        let max_tpf = None;
+        
+        let frame_iter = 1;
 
         let cells = (0..width * height)
             .map(|i|
@@ -184,7 +198,67 @@ impl Universe
             width,
             height,
             cells,
+            tick_rate,
+            median_tpf,
+            max_tpf,
+            frame_iter,
+            increased_tick_rate,
+            decreased_tick_rate,
         }
+    }
+
+    pub fn update_tick_rate(&mut self, tick_rate: u32)
+    {
+        let median_tpf = self.median_tpf.unwrap();
+        
+        if tick_rate == median_tpf
+        {
+            self.tick_rate = Some(tick_rate);
+            self.increased_tick_rate = None;
+            self.decreased_tick_rate = None;
+        }
+        else if tick_rate > median_tpf
+        {
+            self.increased_tick_rate = Some(tick_rate - self.median_tpf.unwrap() + 1);
+            self.tick_rate = None;
+            self.decreased_tick_rate = None;
+        }
+        else if tick_rate < median_tpf
+        {
+            self.decreased_tick_rate = Some(self.median_tpf.unwrap() - tick_rate + 1);
+            self.tick_rate = None;
+            self.increased_tick_rate = None;
+        }
+    }
+
+    pub fn set_max_tpf(&mut self, max_tpf: u32)
+    {
+        self.max_tpf = Some(max_tpf);
+
+        let median_tpf = ((max_tpf as f32 / 2_f32).floor() + 1_f32) as u32;
+        self.median_tpf = Some(median_tpf);
+    }
+
+    pub fn controller(&mut self)
+    {
+        // let median_tpf: u32 = ((max_tpf as f32 / 2_f32).floor() + 1_f32) as u32;
+
+        // if self.tick_rate == self.median_tpf { self.tick(); } else
+        // if self.tick_rate > self.median_tpf { self.increase_tpf(); } else
+        // if self.tick_rate < self.median_tpf && median_tpf - tick_rate + 1 == frame_iter
+        // {
+        //     // self.decrease_tpf(tick_rate, median_tpf, frame_iter);
+        //     self.tick();
+        // }
+        if self.has_value(self.tick_rate) { self.tick() } else
+        if self.has_value(self.increased_tick_rate) { self.increase_tpf(); } else
+        if self.has_value(self.decreased_tick_rate) { self.decrease_tpf(); }
+    }
+
+    pub fn toggle_cell(&mut self, row: u32, column: u32)
+    {
+        let idx = self.get_index(row, column);
+        self.cells[idx].toggle();
     }
 
     pub fn width(&self) -> u32

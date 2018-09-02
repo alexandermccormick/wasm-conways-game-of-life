@@ -16,22 +16,21 @@ const CELL_SIZE = 5,
       ctx = canvas.getContext("2d"),
       toggleUniverse = document.getElementById("toggleUniverse"),
       tickCounter = document.getElementById("ticks"),
-      fpsControl = document.getElementById("tickRange");
+      tpfControl = document.getElementById("tickRange");
 
 /* Animation Frame Control */
 let animationId;
-let frameIter = 0;
-let fps; // global access to setTimeout
-let tickCount = 0;
+let fpsTimeout; // global access to setTimeout
+let fps = 0;
 
-fpsControl.min = 1; // The wasm portion will expect this to always be 1
-fpsControl.max = 11; // Must be odd number
+tpfControl.min = 1; // The wasm portion will expect this to always be 1
+tpfControl.max = 11; // Must be odd number
 
-const fpsControlMedian = Math.floor(fpsControl.max / 2) + 1;
-let tickRate = fpsControl.value;
+universe.set_max_tpf(tpfControl.max);
+universe.update_tick_rate(tpfControl.value);
 
-fpsControl.addEventListener("change", () => {
-    tickRate = fpsControl.value;
+tpfControl.addEventListener("change", () => {
+    universe.update_tick_rate(tpfControl.value);
 });
       
 canvas.height = (CELL_SIZE + 1) * height + 1;
@@ -83,43 +82,19 @@ const drawCells = () => {
     ctx.stroke();
 };
 
-
-/* Animation Frame Control */
-// let animationId;
-// let tickCount = 0;
-// // let fps; // global access to setTimeout
-
 const trackFPS = () => {
-    fps = setTimeout(() => {
-        tickCounter.innerHTML = tickCount;
-        tickCount = 0;
+    fpsTimeout = setTimeout(() => {
+        tickCounter.innerHTML = fps;
+        fps = 0;
         trackFPS();
     }, 1000);
 };
 
-const increaseFPS = () => {
-    for(let i=0; i < tickRate; i++) {
-        universe.tick();
-        tickCount++;
-    }
-};
-
-const decreaseFPS = (frameIter) => {
-    if (Math.abs(tickRate - fpsControlMedian) === frameIter) {
-        frameIter = 0;
-        tickCount++;
-        universe.tick();
-    };
-};
-
 const renderLoop = () => {
-    // if (tickRate === fpsControlMedian) { universe.tick(); } else
-    // if (tickRate > fpsControlMedian) { increaseFPS(); } else
-    // if (tickRate < fpsControlMedian) { decreaseFPS(); };
-    // TICKRATE FRAMEITER FPSMAX
-    frameIter++;
-    tickCount++;
-    universe.tick();
+    fps++;
+
+    universe.controller();
+    
     drawGrid();
     drawCells();
     animationId = requestAnimationFrame(renderLoop);
@@ -133,7 +108,7 @@ const play = () => {
 
 const pause = () => {
     toggleUniverse.textContent = "Paused"
-    clearTimeout(fps);
+    clearTimeout(fpsTimeout);
     cancelAnimationFrame(animationId);
     animationId = undefined;
 };
