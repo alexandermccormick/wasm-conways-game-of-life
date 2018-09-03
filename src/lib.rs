@@ -47,6 +47,7 @@ pub struct Universe
 {
     width: u32,
     height: u32,
+    fps: u32,
     frame_iter: u32,
     cells: Vec<Cell>,
     tick_rate: Option<u32>,
@@ -169,6 +170,7 @@ impl Universe
     {
         let width = 64;
         let height = 64;
+        let fps = 0;
 
         let tick_rate = None;
         let increased_tick_rate = None;
@@ -197,6 +199,7 @@ impl Universe
         {
             width,
             height,
+            fps,
             cells,
             tick_rate,
             median_tpf,
@@ -241,15 +244,8 @@ impl Universe
 
     pub fn controller(&mut self)
     {
-        // let median_tpf: u32 = ((max_tpf as f32 / 2_f32).floor() + 1_f32) as u32;
+        self.fps += 1;
 
-        // if self.tick_rate == self.median_tpf { self.tick(); } else
-        // if self.tick_rate > self.median_tpf { self.increase_tpf(); } else
-        // if self.tick_rate < self.median_tpf && median_tpf - tick_rate + 1 == frame_iter
-        // {
-        //     // self.decrease_tpf(tick_rate, median_tpf, frame_iter);
-        //     self.tick();
-        // }
         if self.has_value(self.tick_rate) { self.tick() } else
         if self.has_value(self.increased_tick_rate) { self.increase_tpf(); } else
         if self.has_value(self.decreased_tick_rate) { self.decrease_tpf(); }
@@ -259,6 +255,14 @@ impl Universe
     {
         let idx = self.get_index(row, column);
         self.cells[idx].toggle();
+    }
+
+    pub fn get_fps(&mut self) -> u32
+    {
+        let fps = self.fps;
+        self.fps = 0;
+
+        fps
     }
 
     pub fn width(&self) -> u32

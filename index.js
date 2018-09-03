@@ -84,15 +84,12 @@ const drawCells = () => {
 
 const trackFPS = () => {
     fpsTimeout = setTimeout(() => {
-        tickCounter.innerHTML = fps;
-        fps = 0;
+        tickCounter.innerHTML = universe.get_fps();
         trackFPS();
     }, 1000);
 };
 
 const renderLoop = () => {
-    fps++;
-
     universe.controller();
     
     drawGrid();
