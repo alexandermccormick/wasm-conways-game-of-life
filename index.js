@@ -18,10 +18,52 @@ const CELL_SIZE = 5,
       tickCounter = document.getElementById("ticks"),
       tpfControl = document.getElementById("tickRange");
 
-/* Animation Frame Control */
-let animationId;
-let fpsTimeout; // global access to setTimeout
-let fps = 0;
+let animationId; // for keeping track of current animation frame
+
+const fps = new class {
+    constructor() {
+        this.fps = document.getElementById("fps");
+        this.frames = [];
+        this.lastFrameTimeStamp = performance.now();
+    };
+
+    render() {
+        // Convert the delta time since the last frame render into a
+        // measure of frames per second
+        const now = performance.now(),
+              delta = now - this.lastFrameTimeStamp,
+              fps = 1 / delta * 1000;
+
+        this.lastFrameTimeStamp = now;
+
+        // Save only the latest 100 timings
+        this.frames.push(fps);
+        if (this.frames.length > 100) {
+            this.frames.shift();
+        };
+
+        // Find the max, min, and mean of our 100 latest timings
+        let min = Infinity,
+            max = -Infinity,
+            sum = 0;
+        
+        for (let i = 0; i < this.frames.length; i++) {
+            sum += this.frames[i];
+            min = Math.min(this.frames[i], min);
+            max = Math.max(this.frames[i], max);
+        };
+        let mean = sum / this.frames.length;
+
+        // Render the statistics
+        this.fps.textContent = `
+        Frames per second:
+                latest = ${Math.round(fps)}
+        Avg of last 100 = ${Math.round(mean)}
+        Min of last 100 = ${Math.round(min)}
+        Max of last 100 = ${Math.round(max)}
+        `.trim();
+    };
+};
 
 tpfControl.min = 1; // The wasm portion will expect this to always be 1
 tpfControl.max = 11; // Must be odd number
@@ -82,14 +124,8 @@ const drawCells = () => {
     ctx.stroke();
 };
 
-const trackFPS = () => {
-    fpsTimeout = setTimeout(() => {
-        tickCounter.innerHTML = universe.get_fps();
-        trackFPS();
-    }, 1000);
-};
-
 const renderLoop = () => {
+    fps.render();
     universe.controller();
     
     drawGrid();
@@ -99,13 +135,11 @@ const renderLoop = () => {
 
 const play = () => {
     toggleUniverse.textContent = "Playing";
-    trackFPS();
     renderLoop();
 };
 
 const pause = () => {
     toggleUniverse.textContent = "Paused"
-    clearTimeout(fpsTimeout);
     cancelAnimationFrame(animationId);
     animationId = undefined;
 };

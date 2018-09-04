@@ -15,8 +15,10 @@
                 .btn {
                     margin-bottom: 1rem;
                 }
-                .fps-multiplier * {
+                .fps {
                     margin: 0;
+                    white-space: pre;
+                    font-family: monospace;
                 }
                 input[name="tickRange"] {
                     display: block;
@@ -27,9 +29,7 @@
             </style>
     </head>
     <body>
-        <section class="fps">
-                <h2>Current FPS: <span id="ticks"></span></h2>
-        </section>
+        <div id="fps" class="fps"></div>
         
         <button id="toggleUniverse" class="btn">Click to Play</button>
 
