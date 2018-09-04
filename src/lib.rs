@@ -13,6 +13,12 @@ extern {
 }
 
 #[wasm_bindgen]
+extern {
+    #[wasm_bindgen(js_namespace = performance)]
+    fn now() -> f64;
+}
+
+#[wasm_bindgen]
 pub fn wasm_panic_init() {
     use std::panic;
     panic::set_hook(Box::new(console_error_panic_hook::hook));
@@ -47,7 +53,6 @@ pub struct Universe
 {
     width: u32,
     height: u32,
-    fps: u32,
     frame_iter: u32,
     cells: Vec<Cell>,
     tick_rate: Option<u32>,
@@ -170,7 +175,6 @@ impl Universe
     {
         let width = 64;
         let height = 64;
-        let fps = 0;
 
         let tick_rate = None;
         let increased_tick_rate = None;
@@ -199,7 +203,6 @@ impl Universe
         {
             width,
             height,
-            fps,
             cells,
             tick_rate,
             median_tpf,
@@ -244,8 +247,6 @@ impl Universe
 
     pub fn controller(&mut self)
     {
-        self.fps += 1;
-
         if self.has_value(self.tick_rate) { self.tick() } else
         if self.has_value(self.increased_tick_rate) { self.increase_tpf(); } else
         if self.has_value(self.decreased_tick_rate) { self.decrease_tpf(); }
@@ -255,14 +256,6 @@ impl Universe
     {
         let idx = self.get_index(row, column);
         self.cells[idx].toggle();
-    }
-
-    pub fn get_fps(&mut self) -> u32
-    {
-        let fps = self.fps;
-        self.fps = 0;
-
-        fps
     }
 
     pub fn width(&self) -> u32
